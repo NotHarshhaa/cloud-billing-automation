@@ -202,9 +202,18 @@ cba init --output-dir config
 
 # Set up credentials
 cba credentials setup-aws --access-key-id YOUR_KEY --secret-access-key YOUR_SECRET
+cba credentials setup-azure --tenant-id TENANT_ID --client-id CLIENT_ID --client-secret SECRET --subscription-id SUB_ID
+cba credentials setup-gcp --service-account-key-path /path/to/key.json
 
-# Validate setup
-cba doctor
+# Validate credentials
+cba credentials validate
+cba credentials status
+
+# List stored credentials
+cba credentials list
+
+# Export credentials
+cba credentials export aws --output-file aws-credentials.sh
 ```
 
 ### **Command Structure**
@@ -462,20 +471,23 @@ notifications:
       channels: [email]
 ```
 
-### Resource Analysis
+### Configuration Management
 
 ```bash
-# Collect resource inventory
-cba resources collect \
-  --providers aws,azure
+# Create configuration file
+cba config create --template production --output-file billing-config.yaml
 
-# Find idle resources
-cba resources idle \
-  --threshold-days 30
+# Validate configuration
+cba config validate --config billing-config.yaml
 
-# Check tag compliance
-cba resources compliance \
-  --required-tags Environment,CostCenter,Owner
+# Show current configuration
+cba config show --section providers
+
+# Edit configuration interactively
+cba config edit --section budget
+
+# Merge configurations
+cba config merge source-config.yaml --target-file billing-config.yaml --strategy merge
 ```
 
 ### Reporting
@@ -520,7 +532,11 @@ cloud-billing-automation/
 │   │   ├── channels.py        # Notification channels
 │   │   └── templates.py       # Alert templates
 │   ├── reports/                # Report generation
-│   ├── utils/                  # Utilities
+│   ├── utils/                  # Security and utility modules
+│   ├── security.py         # IAM and access control
+│   ├── encryption.py        # Data encryption utilities
+│   ├── validation.py        # Input validation and sanitization
+│   └── helpers.py           # Formatting and data utilities
 │   ├── cli/                    # Command-line interface
 │   │   ├── main.py            # Main CLI application
 │   │   └── commands/          # CLI command modules
@@ -529,8 +545,8 @@ cloud-billing-automation/
 │   │       ├── alerts.py      # Alert management commands
 │   │       ├── resources.py   # Resource commands (planned)
 │   │       ├── reports.py     # Report commands (planned)
-│   │       ├── credentials.py # Credential commands (planned)
-│   │       └── config.py      # Configuration commands (planned)
+│   │       ├── credentials.py # Credential management commands
+│   │       └── config.py      # Configuration management commands
 ├── tests/                      # Test suite
 ├── config/                     # Configuration examples
 ├── docs/                       # Documentation
@@ -607,53 +623,56 @@ mypy .
   - ✅ Comprehensive error handling
   - ✅ Project structure and packaging
 
-- **Data Collection**
-  - ✅ AWS billing data collection (Cost Explorer + resource APIs)
-  - ✅ Azure billing data collection (Billing Management APIs)
-  - ✅ GCP billing data collection (Cloud Billing APIs)
-  - ✅ Standardized data structures across providers
+- **Data Collection & Analysis**
+  - ✅ Multi-cloud billing data collection (AWS, Azure, GCP)
+  - ✅ Cost analysis and breakdown by multiple dimensions
+  - ✅ Anomaly detection with statistical methods
+  - ✅ Trend analysis and forecasting
+  - ✅ Resource-level cost analysis
 
-- **Cost Analysis**
-  - ✅ Comprehensive cost analysis and breakdown
-  - ✅ Resource-level cost analysis with efficiency scoring
-  - ✅ Advanced anomaly detection (multiple methods)
-  - ✅ Trend analysis with seasonal pattern detection
-  - ✅ Machine learning-based cost forecasting
-
-- **Budget Alerting System**
-  - ✅ Real-time budget monitoring with threshold tracking
-  - ✅ Multi-channel alerting (Email, Webhook, Slack)
-  - ✅ Escalation policies with severity-based routing
-  - ✅ Dynamic alert templates with Jinja2 rendering
-  - ✅ Alert suppression and cooldown management
-  - ✅ Comprehensive alert history and analytics
+- **Budget Monitoring & Alerting**
+  - ✅ Budget threshold monitoring and alerts
+  - ✅ Multi-channel notifications (Email, Slack, Webhook)
+  - ✅ Alert escalation policies and suppression
+  - ✅ Dynamic alert templates (Jinja2)
+  - ✅ Real-time monitoring and history tracking
 
 - **CLI Interface**
-  - ✅ Rich terminal interface with tables and panels
+  - ✅ Rich terminal output with tables and progress bars
   - ✅ Comprehensive command structure (analyze, budget, alerts)
-  - ✅ Cost analysis commands with multiple output formats
-  - ✅ Budget monitoring and management commands
-  - ✅ Alert management and configuration commands
   - ✅ Professional error handling and validation
+  - ✅ Interactive configuration management
+  - ✅ Credential management commands
+
+- **IAM & Security**
+  - ✅ Role-based access control (RBAC)
+  - ✅ JWT-based session management
+  - ✅ Secure credential encryption (AES-256)
+  - ✅ Comprehensive audit logging
+  - ✅ Multi-cloud validation and sanitization
+  - ✅ Security utilities and helper functions
 
 ### 🚧 In Progress
 
-- **IAM & Security** - Production-ready security features (next priority)
+- **Tag Compliance** - Automated tag validation and enforcement (next priority)
 
 ### 📋 Planned Features
 
-- **Tag Compliance** - Automated tag validation and enforcement
 - **Idle Resource Detection** - Identify and report unused resources
 - **Automated Reports** - Scheduled reports with multiple formats
 - **CI/CD Integration** - Pipeline integration examples
 
 ## 🔐 Security Features
 
-- **Encrypted Credential Storage** - All cloud credentials encrypted at rest
-- **Secure Key Management** - Uses system keyring with Fernet encryption
-- **IAM Best Practices** - Follows principle of least privilege
-- **Audit Logging** - Comprehensive logging for security and compliance
-- **No Hardcoded Secrets** - Configuration through secure channels
+- **Role-Based Access Control (RBAC)** - Granular permissions with roles (admin, operator, viewer, billing_manager, devops)
+- **JWT Session Management** - Secure token-based authentication with configurable timeouts
+- **AES-256 Encryption** - Military-grade encryption for all sensitive data and credentials
+- **Comprehensive Audit Logging** - Complete audit trail for all security events and operations
+- **Multi-Cloud Validation** - Input validation and sanitization for AWS, Azure, and GCP
+- **Security Utilities** - Password hashing, IP validation, secure file operations
+- **Account Lockout** - Automatic account lockout after failed login attempts
+- **Session Revocation** - Immediate session termination capabilities
+- **Secure Key Storage** - Encrypted key management with restrictive file permissions
 
 ## 🤝 Contributing
 
@@ -667,19 +686,35 @@ mypy .
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🛠️ Author & Community
 
-- 📖 **Documentation**: [Full documentation](docs/)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/NotHarshhaa/cloud-billing-automation/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/NotHarshhaa/cloud-billing-automation/discussions)
-- 📧 **Email**: contact@example.com
+Built with passion and purpose by [**Harshhaa**](https://github.com/NotHarshhaa).  
+Your ideas, feedback, and contributions are what make this project better.
 
-## 🙏 Acknowledgments
+⚡ **Made with ❤️ for DevOps Engineers by Harshhaa**
 
-- Built for the DevOps community to solve real-world cloud cost challenges
-- Inspired by FinOps principles and cloud cost management best practices
-- Thanks to all contributors who help make cloud cost management accessible
+**Connect & Collaborate:**  
+
+* **GitHub:** [@NotHarshhaa](https://github.com/NotHarshhaa)  
+* **Links:** [Links - Portfolio](https://link.notharshhaa.site)  
+* **Portfolio:** [Portfolio](https://notharshhaa.site)  
+* **CV Portfolio:** [CV Portfolio](https://cv.notharshhaa.site)
+* **LinkedIn:** [Harshhaa Vardhan Reddy](https://www.linkedin.com/in/harshhaa-vardhan-reddy/)  
 
 ---
 
-**⚡ Made with ❤️ for DevOps Engineers by DevOps Engineers**
+## ⭐ How You Can Support
+
+If you found this project useful:  
+
+* ⭐ **Star** the repository to show your support  
+* 📢 **Share** it with your friends and colleagues  
+* 📝 **Open issues** or **submit pull requests** to help improve it
+
+---
+
+### 📢 Stay Connected
+
+[![Follow Me](https://imgur.com/2j7GSPs.png)](https://github.com/NotHarshhaa)
+
+Join the community, share your experience, and help us grow!
