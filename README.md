@@ -187,7 +187,176 @@ The cloud-billing-automation tool includes a comprehensive alerting system with 
 - **Time-Based Escalation** - Escalate unacknowledged critical alerts
 - **Auto-Resolution** - Automatically resolve alerts when conditions normalize
 
-## �📖 Usage Examples
+## 🖥️ CLI Interface
+
+The cloud-billing-automation tool includes a comprehensive command-line interface with rich output, intuitive commands, and professional error handling.
+
+### **Installation & Setup**
+
+```bash
+# Install the tool
+pip install cloud-billing-automation
+
+# Initialize configuration
+cba init --output-dir config
+
+# Set up credentials
+cba credentials setup-aws --access-key-id YOUR_KEY --secret-access-key YOUR_SECRET
+
+# Validate setup
+cba doctor
+```
+
+### **Command Structure**
+
+```bash
+cba [GLOBAL_OPTIONS] COMMAND [COMMAND_OPTIONS]
+
+Global Options:
+  -c, --config FILE     Configuration file path
+  --debug              Enable debug mode
+  -v, --verbose        Enable verbose output
+  --help               Show help message
+```
+
+### **Cost Analysis Commands**
+
+```bash
+# Analyze costs for specific period
+cba analyze costs \
+  --start-date 2024-01-01 \
+  --end-date 2024-01-31 \
+  --providers aws,azure \
+  --output table
+
+# Get cost breakdown by service
+cba analyze breakdown \
+  --group-by service \
+  --period monthly
+
+# Detect cost anomalies
+cba analyze anomalies \
+  --methods zscore,iqr,percentage \
+  --threshold 2.0
+
+# Analyze cost trends
+cba analyze trends \
+  --metrics total_cost \
+  --period weekly
+
+# Generate cost forecast
+cba analyze forecast \
+  --days 30 \
+  --model auto
+```
+
+### **Budget Management Commands**
+
+```bash
+# Check current budget status
+cba budget status \
+  --config config/billing-config.yaml \
+  --forecast
+
+# Set monthly budget limit
+cba budget set-limit 10000
+
+# Set up budget alerts
+cba budget alerts --setup
+
+# Test alert channels
+cba budget alerts --test
+
+# View budget history
+cba budget history --days 30
+
+# Generate budget forecast
+cba budget forecast --days 30
+```
+
+### **Alert Management Commands**
+
+```bash
+# Test notification channels
+cba alerts test \
+  --channels email,slack,webhook
+
+# View alert history
+cba alerts history \
+  --days 30 \
+  --severity critical,high \
+  --status active
+
+# Suppress alerts for maintenance
+cba alerts suppress \
+  --resource-id i-1234567890abcdef0 \
+  --duration-hours 12 \
+  --reason "Scheduled maintenance"
+
+# Acknowledge an alert
+cba alerts acknowledge alert-id-123 --by "John Doe"
+
+# Resolve an alert
+cba alerts resolve alert-id-123
+
+# Check alert system status
+cba alerts status
+
+# Manage alert rules
+cba alerts rules --list
+cba alerts rules --enable budget_warning
+cba alerts rules --disable anomaly_detection
+```
+
+### **CLI Features**
+
+- **Rich Terminal Output** - Beautiful tables, panels, and colored output
+- **Progress Indicators** - Progress bars for long-running operations
+- **Error Handling** - User-friendly error messages and validation
+- **Auto-completion** - Command auto-completion (bash/zsh)
+- **Help System** - Comprehensive help for all commands
+- **Configuration Detection** - Automatic config file discovery
+- **Multiple Output Formats** - Table, JSON, CSV output options
+
+### **Output Examples**
+
+#### Budget Status Output
+```
+Checking budget status...
+
+Budget Status - Warning
+┌─────────────────┬──────────────┐
+│ Metric          │ Value        │
+├─────────────────┼──────────────┤
+│ Budget Limit    │ $10,000.00   │
+│ Current Spend   │ $8,234.56    │
+│ Usage           │ 82.3%        │
+│ Remaining       │ $1,765.44    │
+│ Days Remaining  │ 12           │
+└─────────────────┴──────────────┘
+
+Risk Assessment
+─────────────────────────────────
+Risk Level: HIGH
+Daily Average: $274.49
+Projected Daily: $147.11
+```
+
+#### Alert History Output
+```
+Loading alert history for last 30 days...
+
+Alert History (15 alerts)
+┌──────────┬─────────────────────────────┬──────────┬──────────────┬─────────┬─────────────────────┐
+│ ID       │ Title                        │ Severity │ Status       │ Source  │ Time                │
+├──────────┼─────────────────────────────┼──────────┼──────────────┼─────────┼─────────────────────┤
+│ 1234...  │ Budget Warning: 82.3% used   │ medium   │ active       │ Budget  │ 2024-01-15 14:30    │
+│ 5678...  │ Cost Anomaly Detected        │ high     │ resolved     │ Anomaly │ 2024-01-14 09:15    │
+│ 9012...  │ Budget Critical: 95.1% used  │ critical │ acknowledged │ Budget  │ 2024-01-13 16:45    │
+└──────────┴─────────────────────────────┴──────────┴──────────────┴─────────┴─────────────────────┘
+```
+
+## 📖 Usage Examples
 
 ### Basic Cost Analysis
 
@@ -352,7 +521,16 @@ cloud-billing-automation/
 │   │   └── templates.py       # Alert templates
 │   ├── reports/                # Report generation
 │   ├── utils/                  # Utilities
-│   └── cli/                    # Command-line interface
+│   ├── cli/                    # Command-line interface
+│   │   ├── main.py            # Main CLI application
+│   │   └── commands/          # CLI command modules
+│   │       ├── analyze.py     # Cost analysis commands
+│   │       ├── budget.py      # Budget monitoring commands
+│   │       ├── alerts.py      # Alert management commands
+│   │       ├── resources.py   # Resource commands (planned)
+│   │       ├── reports.py     # Report commands (planned)
+│   │       ├── credentials.py # Credential commands (planned)
+│   │       └── config.py      # Configuration commands (planned)
 ├── tests/                      # Test suite
 ├── config/                     # Configuration examples
 ├── docs/                       # Documentation
@@ -372,7 +550,7 @@ cloud-billing-automation/
 pytest
 
 # Run with coverage
-pytest --cov=src/cloud_billing_automation
+pytest --cov=cloud_billing_automation
 
 # Run specific test categories
 pytest tests/unit/
@@ -383,13 +561,13 @@ pytest tests/integration/
 
 ```bash
 # Format code
-black src/ tests/
+black . tests/
 
 # Lint code
-flake8 src/ tests/
+flake8 . tests/
 
 # Type checking
-mypy src/
+mypy .
 ```
 
 ### Adding New Cloud Providers
@@ -402,6 +580,22 @@ mypy src/
    - `get_cost_breakdown()`
 3. Add provider configuration to `Config` class
 4. Update CLI commands and documentation
+
+### Adding New CLI Commands
+
+1. Create a new command module in `cli/commands/`
+2. Inherit from `typer.Typer` for command structure
+3. Implement command logic with proper error handling
+4. Add rich output formatting using `rich.console.Console`
+5. Register the command in the main CLI app
+
+### Adding New Alert Channels
+
+1. Create a new channel class inheriting from `BaseChannel`
+2. Implement `send()` and `test_connection()` methods
+3. Add channel type to `ChannelManager._initialize_channels()`
+4. Create alert templates for the new channel
+5. Update configuration schema
 
 ## 📊 Current Implementation Status
 
@@ -434,9 +628,17 @@ mypy src/
   - ✅ Alert suppression and cooldown management
   - ✅ Comprehensive alert history and analytics
 
+- **CLI Interface**
+  - ✅ Rich terminal interface with tables and panels
+  - ✅ Comprehensive command structure (analyze, budget, alerts)
+  - ✅ Cost analysis commands with multiple output formats
+  - ✅ Budget monitoring and management commands
+  - ✅ Alert management and configuration commands
+  - ✅ Professional error handling and validation
+
 ### 🚧 In Progress
 
-- **CLI Interface** - Command-line tool for automation (next priority)
+- **IAM & Security** - Production-ready security features (next priority)
 
 ### 📋 Planned Features
 
