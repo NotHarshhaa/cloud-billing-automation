@@ -152,7 +152,42 @@ cba credentials setup-gcp \
   --service-account-key-path /path/to/service-account.json
 ```
 
-## 📖 Usage Examples
+## � Alerting & Notification System
+
+The cloud-billing-automation tool includes a comprehensive alerting system with multi-channel notifications, escalation policies, and intelligent alert management.
+
+### **Alert Types**
+
+- **Budget Alerts** - Threshold-based budget monitoring (warning, critical, exceeded)
+- **Forecast Alerts** - Predictive alerts based on spending trends
+- **Anomaly Alerts** - Statistical detection of cost outliers
+- **Trend Alerts** - Spending pattern changes and escalations
+- **Resource Alerts** - Individual resource cost issues
+
+### **Notification Channels**
+
+- **Email** - Rich HTML emails with detailed information and recommendations
+- **Slack** - Color-coded messages with interactive elements
+- **Webhook** - JSON payloads for integration with monitoring systems
+- **Custom Channels** - Extensible channel system for custom integrations
+
+### **Alert Features**
+
+- **Severity Levels** - Low, Medium, High, Critical with appropriate escalation
+- **Cooldown Periods** - Prevent alert spam with configurable cooldowns
+- **Alert Suppression** - Temporary suppression for maintenance windows
+- **Template System** - Jinja2-based dynamic alert templates
+- **Alert History** - Comprehensive tracking and analytics
+- **Smart Grouping** - Reduces noise by grouping related alerts
+
+### **Escalation Policies**
+
+- **Threshold-Based** - Different actions for different severity levels
+- **Multi-Channel Routing** - Critical alerts go to all channels, warnings to email only
+- **Time-Based Escalation** - Escalate unacknowledged critical alerts
+- **Auto-Resolution** - Automatically resolve alerts when conditions normalize
+
+## �📖 Usage Examples
 
 ### Basic Cost Analysis
 
@@ -174,19 +209,88 @@ cba analyze anomalies \
   --threshold 2.0
 ```
 
-### Budget Monitoring
+### Budget Monitoring & Alerting
 
 ```bash
 # Check budget status
 cba budget status \
-  --budget 10000 \
-  --warning-threshold 80 \
-  --critical-threshold 95
+  --config config/billing-config.yaml
 
-# Set up budget alerts
-cba budget alerts \
-  --emails devops@company.com \
-  --webhook https://hooks.slack.com/webhook
+# Set up budget alerts with multiple channels
+cba budget alerts setup \
+  --emails devops@company.com,finance@company.com \
+  --slack-webhook https://hooks.slack.com/your-webhook \
+  --webhook https://monitoring.company.com/webhooks/billing
+
+# Test alert channels
+cba alerts test \
+  --channels email,slack,webhook
+
+# View alert history
+cba alerts history \
+  --days 30 \
+  --severity critical,high
+
+# Suppress alerts for maintenance
+cba alerts suppress \
+  --resource-id i-1234567890abcdef0 \
+  --duration-hours 12 \
+  --reason "Scheduled maintenance"
+```
+
+### Alert Configuration Examples
+
+```yaml
+# config/alerts.yaml
+notifications:
+  channels:
+    email:
+      type: email
+      smtp_server: smtp.company.com
+      smtp_port: 587
+      username: alerts@company.com
+      password: ${EMAIL_PASSWORD}
+      from_email: alerts@company.com
+      to_emails: 
+        - devops@company.com
+        - finance@company.com
+      use_tls: true
+    
+    slack:
+      type: slack
+      webhook_url: ${SLACK_WEBHOOK_URL}
+      channel: "#billing-alerts"
+      username: "CloudBillingBot"
+      icon_emoji: ":moneybag:"
+    
+    webhook:
+      type: webhook
+      url: https://monitoring.company.com/webhooks/billing
+      method: POST
+      headers:
+        Authorization: "Bearer ${WEBHOOK_TOKEN}"
+        Content-Type: "application/json"
+      timeout: 30
+      retry_count: 3
+
+  alert_rules:
+    budget_warning:
+      enabled: true
+      severity: medium
+      cooldown_period: 60  # minutes
+      channels: [email, slack]
+    
+    budget_critical:
+      enabled: true
+      severity: high
+      cooldown_period: 30
+      channels: [email, slack, webhook]
+    
+    anomaly_detection:
+      enabled: true
+      min_confidence: 0.7
+      min_deviation_percentage: 20.0
+      channels: [email]
 ```
 
 ### Resource Analysis
@@ -241,6 +345,11 @@ cloud-billing-automation/
 │   │   ├── trend.py           # Trend analysis
 │   │   └── forecast.py        # Cost forecasting
 │   ├── alerts/                 # Alerting system
+│   │   ├── base.py            # Base alert management
+│   │   ├── budget.py          # Budget alert manager
+│   │   ├── anomaly.py         # Anomaly alert manager
+│   │   ├── channels.py        # Notification channels
+│   │   └── templates.py       # Alert templates
 │   ├── reports/                # Report generation
 │   ├── utils/                  # Utilities
 │   └── cli/                    # Command-line interface
@@ -296,7 +405,7 @@ mypy src/
 
 ## 📊 Current Implementation Status
 
-### ✅ Completed Features
+### ✅ **Completed Features**
 
 - **Core Infrastructure**
   - ✅ Configuration management (YAML + environment variables)
@@ -317,16 +426,20 @@ mypy src/
   - ✅ Trend analysis with seasonal pattern detection
   - ✅ Machine learning-based cost forecasting
 
+- **Budget Alerting System**
+  - ✅ Real-time budget monitoring with threshold tracking
+  - ✅ Multi-channel alerting (Email, Webhook, Slack)
+  - ✅ Escalation policies with severity-based routing
+  - ✅ Dynamic alert templates with Jinja2 rendering
+  - ✅ Alert suppression and cooldown management
+  - ✅ Comprehensive alert history and analytics
+
 ### 🚧 In Progress
 
-- **Budget Alerting System**
-  - 🔄 Real-time budget monitoring
-  - 🔄 Multi-channel alerting (email, webhooks)
-  - 🔄 Escalation policies
+- **CLI Interface** - Command-line tool for automation (next priority)
 
 ### 📋 Planned Features
 
-- **CLI Interface** - Command-line tool for automation
 - **Tag Compliance** - Automated tag validation and enforcement
 - **Idle Resource Detection** - Identify and report unused resources
 - **Automated Reports** - Scheduled reports with multiple formats
