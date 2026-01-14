@@ -67,7 +67,7 @@ Documentation = "https://github.com/NotHarshhaa/cloud-billing-automation/docs"
 cba = "cloud_billing_automation.cli.main:app"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 
 [tool.setuptools.package-data]
 cloud_billing_automation = ["templates/*.jinja2", "config/*.yaml"]
@@ -110,4 +110,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=src/cloud_billing_automation --cov-report=term-missing --cov-report=html"
+addopts = "--cov=cloud_billing_automation --cov-report=term-missing --cov-report=html"

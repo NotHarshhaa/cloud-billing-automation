@@ -27,8 +27,7 @@ setup(
     author_email="contact@example.com",
     url="https://github.com/NotHarshhaa/cloud-billing-automation",
     license="MIT",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
+    packages=find_packages(where="."),
     include_package_data=True,
     package_data={
         "cloud_billing_automation": [

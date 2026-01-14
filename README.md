@@ -225,12 +225,12 @@ cba reports schedule \
 
 ```
 cloud-billing-automation/
-├── src/cloud_billing_automation/
-│   ├── core/                    # Core infrastructure
-│   │   ├── config.py           # Configuration management
+├── cloud_billing_automation/     # Main package
+│   ├── core/                     # Core infrastructure
+│   │   ├── config.py            # Configuration management
 │   │   ├── credentials.py      # Secure credential handling
 │   │   └── exceptions.py       # Custom exceptions
-│   ├── collectors/             # Data collection
+│   ├── collectors/              # Data collection
 │   │   ├── base.py            # Base collector interface
 │   │   ├── aws_collector.py   # AWS billing data
 │   │   ├── azure_collector.py # Azure billing data
@@ -247,7 +247,11 @@ cloud-billing-automation/
 ├── tests/                      # Test suite
 ├── config/                     # Configuration examples
 ├── docs/                       # Documentation
-└── examples/                   # Usage examples
+├── examples/                   # Usage examples
+├── pyproject.toml             # Project configuration
+├── requirements.txt           # Dependencies
+├── setup.py                   # Setup script
+└── README.md                  # This file
 ```
 
 ## 🔧 Development
