@@ -5,14 +5,17 @@ Analyze commands for cost analysis and insights.
 import typer
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Any
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich import print as rprint
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+import logging
 
 from ...core.config import Config
 from ...core.exceptions import CloudBillingError
+from ...core.logging_config import get_logger
 from ...collectors.aws_collector import AWSCollector
 from ...collectors.azure_collector import AzureCollector
 from ...collectors.gcp_collector import GCPCollector
@@ -22,6 +25,7 @@ from ...analyzers.trend import TrendAnalyzer
 from ...analyzers.forecast import CostForecaster
 
 console = Console()
+logger = get_logger(__name__)
 
 # Create analyze app
 app = typer.Typer(
@@ -69,38 +73,67 @@ def costs(
     """Analyze costs for specified period."""
     
     try:
+        logger.info(f"Starting cost analysis from {start_date.date()} to {end_date.date()}")
+        
         # Load configuration
         config = _load_config(config_file)
+        logger.debug("Configuration loaded successfully")
         
         # Validate date range
         if end_date <= start_date:
-            console.print("[red]Error: End date must be after start date[/red]")
+            error_msg = "End date must be after start date"
+            logger.error(error_msg)
+            console.print(f"[red]Error: {error_msg}[/red]")
             raise typer.Exit(1)
         
         if (end_date - start_date).days > 365:
-            console.print("[red]Error: Date range cannot exceed 365 days[/red]")
+            error_msg = "Date range cannot exceed 365 days"
+            logger.error(error_msg)
+            console.print(f"[red]Error: {error_msg}[/red]")
             raise typer.Exit(1)
         
         console.print(f"[blue]🔍 Analyzing costs from {start_date.date()} to {end_date.date()}...[/blue]")
         
-        # Collect billing data
-        billing_data = _collect_billing_data(config, providers, start_date, end_date)
+        # Collect billing data with progress indicator
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console
+        ) as progress:
+            
+            task = progress.add_task("Collecting billing data...", total=None)
+            
+            try:
+                billing_data = _collect_billing_data(config, providers, start_date, end_date, progress)
+                progress.update(task, description="Billing data collection complete")
+            except Exception as e:
+                progress.update(task, description=f"Error collecting data: {e}")
+                raise
         
         if not billing_data:
+            logger.warning("No billing data found for the specified period")
             console.print("[yellow]No billing data found for the specified period[/yellow]")
             return
         
+        logger.info(f"Collected {len(billing_data)} billing records")
+        
         # Analyze costs
+        console.print("[blue]📊 Analyzing cost data...[/blue]")
         analyzer = CostAnalyzer(config)
         cost_summary = analyzer.analyze_costs(billing_data, start_date, end_date)
         
         # Display results
         _display_cost_summary(cost_summary, output_format)
+        logger.info("Cost analysis completed successfully")
         
     except CloudBillingError as e:
+        logger.error(f"Cloud billing error: {e}")
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
     except Exception as e:
+        logger.error(f"Unexpected error in cost analysis: {e}", exc_info=True)
         console.print(f"[red]Unexpected error: {e}[/red]")
         raise typer.Exit(1)
 
@@ -375,13 +408,15 @@ def _load_config(config_file: Optional[Path]) -> Config:
 
 
 def _collect_billing_data(config: Config, providers: Optional[List[str]], 
-                          start_date: datetime, end_date: datetime) -> List:
+                          start_date: datetime, end_date: datetime, 
+                          progress: Optional[Any] = None) -> List:
     """Collect billing data from specified providers."""
     all_data = []
     
     # Determine which providers to use
     if providers:
         provider_list = providers
+        logger.info(f"Using specified providers: {', '.join(providers)}")
     else:
         provider_list = []
         if config.aws.enabled:
@@ -390,11 +425,16 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
             provider_list.append("azure")
         if config.gcp.enabled:
             provider_list.append("gcp")
+        logger.info(f"Using enabled providers: {', '.join(provider_list)}")
     
     # Collect data from each provider
     for provider in provider_list:
         try:
-            console.print(f"  [dim]Collecting data from {provider.upper()}...[/dim]")
+            logger.debug(f"Collecting data from {provider.upper()}")
+            if progress:
+                progress.update(progress.tasks[0], description=f"Collecting from {provider.upper()}...")
+            else:
+                console.print(f"  [dim]Collecting data from {provider.upper()}...[/dim]")
             
             if provider == "aws":
                 # Get AWS credentials
@@ -403,6 +443,7 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 aws_creds = cred_mgr.get_aws_credentials()
                 
                 if not aws_creds:
+                    logger.warning("AWS credentials not configured")
                     console.print(f"[yellow]Warning: AWS credentials not configured[/yellow]")
                     continue
                 
@@ -410,6 +451,7 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 collector.authenticate()
                 data = collector.collect_billing_data(start_date, end_date)
                 all_data.extend(data)
+                logger.info(f"Collected {len(data)} AWS billing records")
                 
             elif provider == "azure":
                 # Get Azure credentials
@@ -418,6 +460,7 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 azure_creds = cred_mgr.get_azure_credentials()
                 
                 if not azure_creds:
+                    logger.warning("Azure credentials not configured")
                     console.print(f"[yellow]Warning: Azure credentials not configured[/yellow]")
                     continue
                 
@@ -425,6 +468,7 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 collector.authenticate()
                 data = collector.collect_billing_data(start_date, end_date)
                 all_data.extend(data)
+                logger.info(f"Collected {len(data)} Azure billing records")
                 
             elif provider == "gcp":
                 # Get GCP credentials
@@ -433,6 +477,7 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 gcp_creds = cred_mgr.get_gcp_credentials()
                 
                 if not gcp_creds:
+                    logger.warning("GCP credentials not configured")
                     console.print(f"[yellow]Warning: GCP credentials not configured[/yellow]")
                     continue
                 
@@ -440,11 +485,14 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 collector.authenticate()
                 data = collector.collect_billing_data(start_date, end_date)
                 all_data.extend(data)
+                logger.info(f"Collected {len(data)} GCP billing records")
                 
         except Exception as e:
+            logger.error(f"Failed to collect data from {provider}: {e}", exc_info=True)
             console.print(f"[yellow]Warning: Failed to collect data from {provider}: {e}[/yellow]")
             continue
     
+    logger.info(f"Total billing records collected: {len(all_data)}")
     return all_data
 
 

@@ -226,8 +226,8 @@ class Config:
                     "project_id": self.gcp.project_id,
                     "regions": self.gcp.regions,
                     "tags_required": self.gcp.tags_required,
-                    "cost_center_tag": self.aws.cost_center_tag,
-                    "environment_tag": self.aws.environment_tag,
+                    "cost_center_tag": self.gcp.cost_center_tag,
+                    "environment_tag": self.gcp.environment_tag,
                 },
             },
             "budget": {

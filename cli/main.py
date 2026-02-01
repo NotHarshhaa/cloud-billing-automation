@@ -10,12 +10,15 @@ from rich.panel import Panel
 from rich import print as rprint
 from typing import Optional
 from pathlib import Path
+import logging
 
 from ..core.config import Config
 from ..core.exceptions import CloudBillingError
+from ..core.logging_config import setup_logging, get_logger
 
 # Create console for rich output
 console = Console()
+logger = get_logger(__name__)
 
 # Create main app
 app = typer.Typer(
@@ -27,13 +30,11 @@ app = typer.Typer(
 )
 
 # Add subcommands
-from .commands import analyze, budget, alerts, resources, reports, credentials, config
+from .commands import analyze, budget, alerts, credentials, config
 
 app.add_typer(analyze.app, name="analyze", help="Analyze cloud costs and generate insights")
 app.add_typer(budget.app, name="budget", help="Budget monitoring and management")
 app.add_typer(alerts.app, name="alerts", help="Alert management and configuration")
-app.add_typer(resources.app, name="resources", help="Resource inventory and optimization")
-app.add_typer(reports.app, name="reports", help="Generate and manage reports")
 app.add_typer(credentials.app, name="credentials", help="Manage cloud credentials")
 app.add_typer(config.app, name="config", help="Configuration management")
 
@@ -60,6 +61,11 @@ def main_callback(
         "--verbose",
         "-v",
         help="Enable verbose output"
+    ),
+    log_file: Optional[Path] = typer.Option(
+        None,
+        "--log-file",
+        help="Log file path"
     )
 ) -> None:
     """Cloud Billing Automation CLI
@@ -71,29 +77,39 @@ def main_callback(
         cba budget status --config config/billing.yaml
         cba alerts test --channels email,slack
     """
+    # Setup logging first
+    log_level = "DEBUG" if debug or verbose else "INFO"
+    log_path = str(log_file) if log_file else None
+    setup_logging(level=log_level, log_file=log_path, debug=debug)
+    
+    logger.info(f"Cloud Billing Automation CLI started (debug={debug}, verbose={verbose})")
+    
     # Store global config for subcommands
     if config_file:
         try:
+            logger.debug(f"Loading configuration from {config_file}")
             cfg = Config.from_file(str(config_file))
             # Store in context for subcommands
             typer.ctx.ensure_object(dict)
             typer.ctx.obj['config'] = cfg
             typer.ctx.obj['config_file'] = config_file
+            logger.info("Configuration loaded successfully")
         except CloudBillingError as e:
+            logger.error(f"Error loading configuration: {e}")
             console.print(f"[red]Error loading configuration: {e}[/red]")
             raise typer.Exit(1)
     
     # Set debug mode
     if debug:
-        import logging
-        logging.basicConfig(level=logging.DEBUG)
         typer.ctx.ensure_object(dict)
         typer.ctx.obj['debug'] = True
+        logger.debug("Debug mode enabled")
     
     # Set verbose mode
     if verbose:
         typer.ctx.ensure_object(dict)
         typer.ctx.obj['verbose'] = True
+        logger.debug("Verbose mode enabled")
 
 
 @app.command()
