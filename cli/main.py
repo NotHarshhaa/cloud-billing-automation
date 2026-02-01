@@ -12,9 +12,9 @@ from typing import Optional
 from pathlib import Path
 import logging
 
-from ..core.config import Config
-from ..core.exceptions import CloudBillingError
-from ..core.logging_config import setup_logging, get_logger
+from core.config import Config
+from core.exceptions import CloudBillingError
+from core.logging_config import setup_logging, get_logger
 
 # Create console for rich output
 console = Console()
@@ -30,7 +30,7 @@ app = typer.Typer(
 )
 
 # Add subcommands
-from .commands import analyze, budget, alerts, credentials, config, optimize
+from cli.commands import analyze, budget, alerts, credentials, config, optimize
 
 app.add_typer(analyze.app, name="analyze", help="Analyze cloud costs and generate insights")
 app.add_typer(budget.app, name="budget", help="Budget monitoring and management")
@@ -116,7 +116,12 @@ def main_callback(
 @app.command()
 def version() -> None:
     """Show version information."""
-    from .. import __version__, __author__
+    try:
+        import __version__
+        import __author__
+    except ImportError:
+        __version__ = "0.3.0"
+        __author__ = "H A R S H H A A"
     
     table = Table(show_header=False, box=None)
     table.add_column("Property", style="cyan")
@@ -321,7 +326,7 @@ def doctor() -> None:
     # Check credentials
     cred_status = "[yellow]Not configured[/yellow]"
     try:
-        from ..core.credentials import CredentialManager
+        from core.credentials import CredentialManager
         cred_mgr = CredentialManager()
         if cred_mgr.list_credentials():
             cred_status = "[green]Configured[/green]"

@@ -4,8 +4,8 @@ Anomaly alert management system.
 
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from ..core.exceptions import AlertError
-from ..analyzers.anomaly import AnomalyResult
+from core.exceptions import AlertError
+from analyzers.anomaly import AnomalyResult
 from .base import BaseAlertManager, Alert, AlertRule, AlertSeverity, AlertStatus
 from .channels import ChannelManager
 

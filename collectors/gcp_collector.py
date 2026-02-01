@@ -6,12 +6,11 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from google.cloud import billing_v1
-from google.cloud import resource_manager_v3
 from google.cloud import compute_v1
 from google.cloud import storage
 from google.oauth2 import service_account
 from .base import BaseCollector, BillingData, ResourceData
-from ..core.exceptions import CollectorError, APIError
+from core.exceptions import CollectorError, APIError
 
 
 class GCPCollector(BaseCollector):

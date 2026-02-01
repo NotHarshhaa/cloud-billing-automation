@@ -7,8 +7,8 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
-from ..collectors.base import BillingData, ResourceData
-from ..core.exceptions import AnalyzerError
+from collectors.base import BillingData, ResourceData
+from core.exceptions import AnalyzerError
 
 
 @dataclass

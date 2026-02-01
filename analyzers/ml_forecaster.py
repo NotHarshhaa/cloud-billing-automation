@@ -19,10 +19,10 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
-from ..core.config import Config
-from ..core.exceptions import AnalyzerError
-from ..collectors.base import BillingData
-from ..core.logging_config import get_logger
+from core.config import Config
+from core.exceptions import AnalyzerError
+from collectors.base import BillingData
+from core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

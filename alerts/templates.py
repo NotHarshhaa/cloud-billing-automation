@@ -6,7 +6,7 @@ from jinja2 import Environment, Template, FileSystemLoader
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
-from ..core.exceptions import AlertError
+from core.exceptions import AlertError
 from .base import Alert
 
 

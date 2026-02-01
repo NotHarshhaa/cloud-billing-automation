@@ -12,7 +12,7 @@ from azure.mgmt.sql import SqlManagementClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.web import WebSiteManagementClient
 from .base import BaseCollector, BillingData, ResourceData
-from ..core.exceptions import CollectorError, APIError
+from core.exceptions import CollectorError, APIError
 
 
 class AzureCollector(BaseCollector):

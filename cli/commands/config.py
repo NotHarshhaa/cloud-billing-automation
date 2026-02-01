@@ -13,8 +13,8 @@ from rich import print as rprint
 import yaml
 import os
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError, ConfigurationError
+from core.config import Config
+from core.exceptions import CloudBillingError, ConfigurationError
 
 console = Console()
 

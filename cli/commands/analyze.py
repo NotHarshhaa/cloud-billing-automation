@@ -13,16 +13,14 @@ from rich import print as rprint
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 import logging
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError
-from ...core.logging_config import get_logger
-from ...collectors.aws_collector import AWSCollector
-from ...collectors.azure_collector import AzureCollector
-from ...collectors.gcp_collector import GCPCollector
-from ...analyzers.cost import CostAnalyzer
-from ...analyzers.anomaly import AnomalyDetector
-from ...analyzers.trend import TrendAnalyzer
-from ...analyzers.forecast import CostForecaster
+from core.config import Config
+from core.exceptions import CloudBillingError
+from core.logging_config import get_logger
+from collectors import AWSCollector, AzureCollector, GCPCollector
+from analyzers.cost import CostAnalyzer
+from analyzers.anomaly import AnomalyDetector
+from analyzers.trend import TrendAnalyzer
+from analyzers import CostForecaster
 
 console = Console()
 logger = get_logger(__name__)
@@ -372,6 +370,10 @@ def forecast(
             return
         
         # Generate forecast
+        if CostForecaster is None:
+            console.print("[yellow]Warning: CostForecaster not available - missing sklearn[/yellow]")
+            return
+        
         forecaster = CostForecaster(config)
         forecast = forecaster.forecast_costs(billing_data, days, model)
         
@@ -437,8 +439,13 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 console.print(f"  [dim]Collecting data from {provider.upper()}...[/dim]")
             
             if provider == "aws":
+                # Check if AWS collector is available
+                if AWSCollector is None:
+                    console.print("[yellow]Warning: AWS collector not available - missing boto3[/yellow]")
+                    continue
+                    
                 # Get AWS credentials
-                from ...core.credentials import CredentialManager
+                from core.credentials import CredentialManager
                 cred_mgr = CredentialManager()
                 aws_creds = cred_mgr.get_aws_credentials()
                 
@@ -454,8 +461,13 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 logger.info(f"Collected {len(data)} AWS billing records")
                 
             elif provider == "azure":
+                # Check if Azure collector is available
+                if AzureCollector is None:
+                    console.print("[yellow]Warning: Azure collector not available - missing azure modules[/yellow]")
+                    continue
+                    
                 # Get Azure credentials
-                from ...core.credentials import CredentialManager
+                from core.credentials import CredentialManager
                 cred_mgr = CredentialManager()
                 azure_creds = cred_mgr.get_azure_credentials()
                 
@@ -471,8 +483,13 @@ def _collect_billing_data(config: Config, providers: Optional[List[str]],
                 logger.info(f"Collected {len(data)} Azure billing records")
                 
             elif provider == "gcp":
+                # Check if GCP collector is available
+                if GCPCollector is None:
+                    console.print("[yellow]Warning: GCP collector not available - missing google cloud modules[/yellow]")
+                    continue
+                    
                 # Get GCP credentials
-                from ...core.credentials import CredentialManager
+                from core.credentials import CredentialManager
                 cred_mgr = CredentialManager()
                 gcp_creds = cred_mgr.get_gcp_credentials()
                 

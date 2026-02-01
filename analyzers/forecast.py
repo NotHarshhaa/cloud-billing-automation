@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from ..collectors.base import BillingData
-from ..core.exceptions import AnalyzerError
+from collectors.base import BillingData
+from core.exceptions import AnalyzerError
 
 
 @dataclass

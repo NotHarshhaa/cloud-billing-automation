@@ -46,6 +46,7 @@ dependencies = [
     "rich>=13.0.0",
     "typer>=0.7.0",
     "structlog>=22.3.0",
+    "schedule>=1.2.0",
 ]
 
 [project.optional-dependencies]
@@ -64,10 +65,14 @@ Documentation = "https://github.com/NotHarshhaa/cloud-billing-automation/docs"
 "Bug Tracker" = "https://github.com/NotHarshhaa/cloud-billing-automation/issues"
 
 [project.scripts]
-cba = "cloud_billing_automation.cli.main:app"
+cba = "cli.main:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["*"]
+
+[tool.setuptools.package-dir]
+"" = "."
 
 [tool.setuptools.package-data]
 cloud_billing_automation = ["templates/*.jinja2", "config/*.yaml"]

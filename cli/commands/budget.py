@@ -12,10 +12,10 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich import print as rprint
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError
-from ...alerts.budget import BudgetAlertManager
-from ...analyzers.cost import CostAnalyzer
+from core.config import Config
+from core.exceptions import CloudBillingError
+from alerts.budget import BudgetAlertManager
+from analyzers.cost import CostAnalyzer
 
 console = Console()
 
@@ -286,8 +286,12 @@ def _collect_recent_billing_data(config: Config, start_date: datetime, end_date:
     # Try to collect from enabled providers
     if config.aws.enabled:
         try:
-            from ...core.credentials import CredentialManager
-            from ...collectors.aws_collector import AWSCollector
+            from core.credentials import CredentialManager
+            from collectors import AWSCollector
+            
+            if AWSCollector is None:
+                console.print("[yellow]Warning: AWS collector not available - missing boto3[/yellow]")
+                return all_data
             
             cred_mgr = CredentialManager()
             aws_creds = cred_mgr.get_aws_credentials()
@@ -375,7 +379,7 @@ notifications:
         return
     
     # Test each channel
-    from ...alerts.channels import ChannelManager
+    from alerts.channels import ChannelManager
     channel_manager = ChannelManager(notifications)
     
     console.print("Testing notification channels...")
@@ -411,7 +415,7 @@ def _test_alert_channels(config: Config) -> None:
         console.print("[red]No notification channels configured[/red]")
         return
     
-    from ...alerts.channels import ChannelManager
+    from alerts.channels import ChannelManager
     channel_manager = ChannelManager(notifications)
     
     with Progress(

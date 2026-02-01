@@ -11,11 +11,11 @@ from rich.table import Table
 from rich.panel import Panel
 from rich import print as rprint
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError
-from ...alerts.budget import BudgetAlertManager
-from ...alerts.anomaly import AnomalyAlertManager
-from ...alerts.channels import ChannelManager
+from core.config import Config
+from core.exceptions import CloudBillingError
+from alerts.budget import BudgetAlertManager
+from alerts.anomaly import AnomalyAlertManager
+from alerts.channels import ChannelManager
 
 console = Console()
 

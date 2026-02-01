@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-from ..core.exceptions import AlertError
+from core.exceptions import AlertError
 
 
 class AlertSeverity(Enum):
@@ -71,8 +71,8 @@ class AlertRule:
     conditions: Dict[str, Any]
     actions: List[Dict[str, Any]]
     cooldown_period: int  # minutes
-    escalation_policy: Optional[str] = None
     tags: List[str]
+    escalation_policy: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert rule to dictionary."""

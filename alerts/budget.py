@@ -5,8 +5,8 @@ Budget alert management system.
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
-from ..core.exceptions import AlertError, BudgetExceededError
-from ..analyzers.cost import CostSummary
+from core.exceptions import AlertError, BudgetExceededError
+from analyzers.cost import CostSummary
 from .base import BaseAlertManager, Alert, AlertRule, AlertSeverity, AlertStatus
 from .channels import ChannelManager
 

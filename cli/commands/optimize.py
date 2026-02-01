@@ -13,11 +13,11 @@ from rich import print as rprint
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import logging
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError
-from ...core.logging_config import get_logger
-from ...analyzers.optimizer import CostOptimizer, CostRecommendation, RecommendationType
-from ...collectors.base import BillingData, ResourceData
+from core.config import Config
+from core.exceptions import CloudBillingError
+from core.logging_config import get_logger
+from analyzers.optimizer import CostOptimizer, CostRecommendation, RecommendationType
+from collectors.base import BillingData, ResourceData
 
 console = Console()
 logger = get_logger(__name__)

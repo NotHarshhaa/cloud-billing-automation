@@ -6,7 +6,7 @@ import boto3
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from .base import BaseCollector, BillingData, ResourceData
-from ..core.exceptions import CollectorError, APIError
+from core.exceptions import CollectorError, APIError
 
 
 class AWSCollector(BaseCollector):

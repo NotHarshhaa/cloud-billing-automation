@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
-from ..core.exceptions import CollectorError
+from core.exceptions import CollectorError
 
 
 @dataclass

@@ -12,9 +12,9 @@ from rich.prompt import Prompt, Confirm
 from rich import print as rprint
 import getpass
 
-from ...core.config import Config
-from ...core.exceptions import CloudBillingError, CredentialError
-from ...core.credentials import CredentialManager
+from core.config import Config
+from core.exceptions import CloudBillingError, CredentialError
+from core.credentials import CredentialManager
 
 console = Console()
 
