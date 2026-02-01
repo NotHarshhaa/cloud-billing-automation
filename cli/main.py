@@ -30,13 +30,14 @@ app = typer.Typer(
 )
 
 # Add subcommands
-from .commands import analyze, budget, alerts, credentials, config
+from .commands import analyze, budget, alerts, credentials, config, optimize
 
 app.add_typer(analyze.app, name="analyze", help="Analyze cloud costs and generate insights")
 app.add_typer(budget.app, name="budget", help="Budget monitoring and management")
 app.add_typer(alerts.app, name="alerts", help="Alert management and configuration")
 app.add_typer(credentials.app, name="credentials", help="Manage cloud credentials")
 app.add_typer(config.app, name="config", help="Configuration management")
+app.add_typer(optimize.app, name="optimize", help="Cost optimization and recommendations")
 
 
 @app.callback()

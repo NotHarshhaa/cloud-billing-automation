@@ -40,13 +40,24 @@ A comprehensive cloud billing automation tool built for Cloud Engineers and DevO
 
 ### 🔍 **Resource Optimization**
 - **Idle resource detection** for compute instances, storage, and databases
-- **Cost optimization recommendations** based on usage patterns
+- **Cost optimization recommendations** with AI-powered insights
 - **Rightsizing suggestions** with potential savings calculations
+- **Automated optimization workflows** for common cost-saving opportunities
+- **Quick win identification** for low-effort, high-impact savings
 
-### 📑 **Automated Reporting**
-- **Scheduled reports** (daily, weekly, monthly) in multiple formats
-- **Custom report templates** with charts and visualizations
-- **Email delivery** with interactive HTML reports
+### 🤖 **Machine Learning Forecasting**
+- **Advanced ML models** - Linear Regression, Random Forest, Gradient Boosting
+- **Time series analysis** with seasonal pattern detection and trend analysis
+- **Feature engineering** - Lag features, rolling statistics, trend indicators
+- **Model comparison** - Automatic model selection with accuracy metrics
+- **Confidence intervals** - Probabilistic forecasting with risk assessment
+
+### 📊 **Automated Report Scheduler**
+- **Flexible scheduling** - Daily, weekly, monthly, quarterly automated reports
+- **Multiple output formats** - JSON, CSV, HTML with PDF/Excel support
+- **Background processing** - Thread-based scheduler for reliable automation
+- **Rich report content** - Cost analysis, forecasts, optimization recommendations
+- **Email delivery** - Automated distribution to stakeholders with attachments
 
 ### ⚙️ **DevOps Integration**
 - **CLI tool** for automation and scripting
@@ -255,10 +266,30 @@ cba analyze trends \
   --metrics total_cost \
   --period weekly
 
-# Generate cost forecast
+# Generate cost forecast with ML models
 cba analyze forecast \
   --days 30 \
-  --model auto
+  --model random_forest
+```
+
+### **Cost Optimization Commands**
+
+```bash
+# Analyze cost optimization opportunities
+cba optimize analyze \
+  --start-date 2024-01-01 \
+  --end-date 2024-01-31 \
+  --min-savings 50 \
+  --effort low
+
+# Find quick win opportunities
+cba optimize quick-wins \
+  --config config/billing-config.yaml
+
+# Get recommendations by type
+cba optimize by-type unused_resources
+cba optimize by-type rightsizing
+cba optimize by-type scheduled_shutdown
 ```
 
 ### **Budget Management Commands**
@@ -492,20 +523,35 @@ cba config edit --section budget
 cba config merge source-config.yaml --target-file billing-config.yaml --strategy merge
 ```
 
-### Reporting
+### Reporting & Automation
 
 ```bash
-# Generate monthly report
+# Generate comprehensive cost report
 cba reports generate \
   --period monthly \
   --formats html,pdf \
-  --email finance@company.com
+  --email finance@company.com \
+  --include-forecasts \
+  --include-optimizations
 
-# Schedule daily reports
-cba reports schedule \
-  --frequency daily \
-  --time 09:00 \
-  --recipients team@company.com
+# Schedule automated reports
+from cloud_billing_automation.reports.scheduler import ReportScheduler
+
+scheduler = ReportScheduler(config)
+scheduler.add_report(ReportConfig(
+    name="monthly-cost-report",
+    schedule=ReportSchedule.MONTHLY,
+    format=ReportFormat.HTML,
+    recipients=["finance@company.com", "devops@company.com"],
+    include_forecasts=True,
+    include_optimizations=True
+))
+scheduler.start_scheduler()
+
+# Run report immediately
+cba reports run-now \
+  --report-name monthly-cost-report \
+  --output-format html
 ```
 
 ## 🏗️ Architecture
@@ -526,7 +572,9 @@ cloud-billing-automation/
 │   │   ├── cost.py            # Cost analysis & breakdown
 │   │   ├── anomaly.py         # Anomaly detection
 │   │   ├── trend.py           # Trend analysis
-│   │   └── forecast.py        # Cost forecasting
+│   │   ├── forecast.py        # Cost forecasting
+│   │   ├── optimizer.py       # Cost optimization recommendations
+│   │   └── ml_forecaster.py   # Machine learning forecasting
 │   ├── alerts/                 # Alerting system
 │   │   ├── base.py            # Base alert management
 │   │   ├── budget.py          # Budget alert manager
@@ -534,6 +582,8 @@ cloud-billing-automation/
 │   │   ├── channels.py        # Notification channels
 │   │   └── templates.py       # Alert templates
 │   ├── reports/                # Report generation
+│   │   ├── scheduler.py        # Automated report scheduler
+│   │   └── generators.py       # Report format generators
 │   ├── utils/                  # Security and utility modules
 │   ├── security.py         # IAM and access control
 │   ├── encryption.py        # Data encryption utilities
@@ -545,8 +595,7 @@ cloud-billing-automation/
 │   │       ├── analyze.py     # Cost analysis commands
 │   │       ├── budget.py      # Budget monitoring commands
 │   │       ├── alerts.py      # Alert management commands
-│   │       ├── resources.py   # Resource commands (planned)
-│   │       ├── reports.py     # Report commands (planned)
+│   │       ├── optimize.py    # Cost optimization commands
 │   │       ├── credentials.py # Credential management commands
 │   │       └── config.py      # Configuration management commands
 ├── tests/                      # Test suite
@@ -631,6 +680,8 @@ mypy .
   - ✅ Anomaly detection with statistical methods
   - ✅ Trend analysis and forecasting
   - ✅ Resource-level cost analysis
+  - ✅ **Machine Learning forecasting** with advanced models
+  - ✅ **Cost optimization recommendations** with AI insights
 
 - **Budget Monitoring & Alerting**
   - ✅ Budget threshold monitoring and alerts
@@ -639,12 +690,20 @@ mypy .
   - ✅ Dynamic alert templates (Jinja2)
   - ✅ Real-time monitoring and history tracking
 
+- **Cost Optimization & Automation**
+  - ✅ **Intelligent optimization recommendations** (rightsizing, unused resources, scheduled shutdowns)
+  - ✅ **Quick win identification** for low-effort savings
+  - ✅ **Automated report scheduler** with flexible scheduling
+  - ✅ **Multi-format report generation** (JSON, CSV, HTML)
+  - ✅ **Background processing** for reliable automation
+
 - **CLI Interface**
   - ✅ Rich terminal output with tables and progress bars
-  - ✅ Comprehensive command structure (analyze, budget, alerts)
+  - ✅ Comprehensive command structure (analyze, budget, alerts, optimize)
   - ✅ Professional error handling and validation
   - ✅ Interactive configuration management
   - ✅ Credential management commands
+  - ✅ **Cost optimization commands** with filtering options
 
 - **IAM & Security**
   - ✅ Role-based access control (RBAC)
@@ -660,9 +719,66 @@ mypy .
 
 ### 📋 Planned Features
 
-- **Idle Resource Detection** - Identify and report unused resources
-- **Automated Reports** - Scheduled reports with multiple formats
-- **CI/CD Integration** - Pipeline integration examples
+- **Advanced Anomaly Detection** - Deep learning models for complex pattern detection
+- **Multi-Cloud Resource Discovery** - Automated resource inventory across providers
+- **Cost Allocation Engine** - Advanced cost attribution and showback/chargeback
+- **Integration Marketplace** - Pre-built integrations with popular monitoring tools
+- **Mobile App** - Native mobile applications for on-the-go cost monitoring
+
+## � Version History
+
+### **v0.3.0** - Latest Release 🎉
+**Released: February 2026**
+
+#### ✨ **Major New Features**
+- **🤖 Machine Learning Forecasting** - Advanced ML models (Linear Regression, Random Forest, Gradient Boosting) with time series analysis and confidence intervals
+- **🎯 Cost Optimization Engine** - AI-powered recommendations for rightsizing, unused resources, scheduled shutdowns, and storage optimization
+- **📊 Automated Report Scheduler** - Background report generation with flexible scheduling (daily, weekly, monthly, quarterly) and multiple output formats
+
+#### 🚀 **New CLI Commands**
+- `cba optimize analyze` - Comprehensive cost optimization analysis
+- `cba optimize quick-wins` - Low-effort, high-impact savings opportunities
+- `cba optimize by-type <type>` - Filter recommendations by type
+
+#### 🔧 **Technical Improvements**
+- Enhanced progress indicators for long-running operations
+- Improved error handling with structured logging
+- Better configuration validation and management
+- Optional sklearn dependency with graceful fallbacks
+
+#### 📈 **Enhanced Features**
+- ML-based forecasting with model comparison and accuracy metrics
+- Intelligent optimization recommendations with confidence scores
+- Automated report scheduling with email delivery
+- Rich CLI output with progress bars and status indicators
+
+---
+
+### **v0.2.0**
+**Released: February 2026**
+
+#### 🔧 **Improvements**
+- Added comprehensive logging configuration with Rich formatting
+- Enhanced error handling and validation throughout the application
+- Fixed configuration bugs and improved CLI structure
+- Added progress indicators for data collection operations
+- Improved package structure and dependency management
+
+---
+
+### **v0.1.0**
+**Released: February 2026**
+
+#### 🎉 **Initial Release**
+- Multi-cloud billing data collection (AWS, Azure, GCP)
+- Cost analysis and breakdown by multiple dimensions
+- Budget monitoring and alerting system
+- Anomaly detection with statistical methods
+- Rich CLI interface with professional output
+- Comprehensive credential management
+- Multi-channel notifications (Email, Slack, Webhook)
+
+---
 
 ## 🔐 Security Features
 
