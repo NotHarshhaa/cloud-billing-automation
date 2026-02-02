@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cloud-billing-automation"
-version = "0.3.0"
+version = "0.5.4"
 description = "DevOps-centric cloud cost governance and automation tool"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -65,17 +65,14 @@ Documentation = "https://github.com/NotHarshhaa/cloud-billing-automation/docs"
 "Bug Tracker" = "https://github.com/NotHarshhaa/cloud-billing-automation/issues"
 
 [project.scripts]
-cba = "cli.main:app"
+cba = "cba.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["*"]
-
-[tool.setuptools.package-dir]
-"" = "."
+include = ["cba*"]
 
 [tool.setuptools.package-data]
-cloud_billing_automation = ["templates/*.jinja2", "config/*.yaml"]
+cba = ["cba.bat", "templates/*.jinja2", "config/*.yaml"]
 
 [tool.black]
 line-length = 88

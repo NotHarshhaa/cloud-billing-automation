@@ -1,0 +1,31 @@
+"""
+Cloud Billing Automation Tool
+
+A DevOps-centric cloud cost governance and automation project built for 
+Cloud Engineers and DevOps Engineers to gain visibility, control, and 
+automation over cloud billing.
+"""
+
+__version__ = "0.5.4"
+__author__ = "H A R S H H A A"
+__email__ = "contact@example.com"
+
+# Import main components
+try:
+    from .core.config import Config
+    from .core.credentials import CredentialManager
+    from .collectors.base import BaseCollector
+    from .analyzers.cost import CostAnalyzer
+    from .alerts.budget import BudgetAlertManager
+
+    __all__ = [
+        "Config",
+        "CredentialManager", 
+        "BaseCollector",
+        "CostAnalyzer",
+        "BudgetAlertManager",
+    ]
+except ImportError as e:
+    # Handle import errors gracefully
+    print(f"Warning: Some components not available: {e}")
+    __all__ = ["__version__", "__author__"]

@@ -195,9 +195,9 @@ data/
 *.db
 *.sqlite
 
-# Reports output
-reports/
-output/
+# Reports output (generated reports, not the source code)
+/reports/
+/output/
 
 # Temporary files
 tmp/
