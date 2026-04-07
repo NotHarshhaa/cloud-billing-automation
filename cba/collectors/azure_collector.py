@@ -157,12 +157,46 @@ class AzureCollector(BaseCollector):
         usage_data = []
         
         try:
-            # This is a simplified implementation
-            # In practice, you'd use the Azure Consumption Management API
-            # or Azure Cost Management API for detailed usage data
+            from azure.mgmt.consumption import ConsumptionManagementClient
             
-            # For now, we'll create a placeholder implementation
-            # that would be replaced with actual API calls
+            consumption_client = ConsumptionManagementClient(
+                self.credential,
+                self.credentials["subscription_id"]
+            )
+            
+            # Get usage details for the date range
+            filter_str = f"properties/usageStart ge '{start_date.isoformat()}' and properties/usageEnd le '{end_date.isoformat()}'"
+            
+            usage_details = consumption_client.usage_details.list(
+                scope=f"/subscriptions/{self.credentials['subscription_id']}",
+                filter=filter_str
+            )
+            
+            for usage in usage_details:
+                # Extract usage details
+                billing_entry = BillingData(
+                    provider="azure",
+                    account_id=self.config.azure.subscription_id,
+                    service=usage.consumed_service or "Unknown",
+                    region=usage.resource_location or "Unknown",
+                    resource_id=usage.instance_id or "Unknown",
+                    resource_name=usage.instance_name or usage.instance_id or "Unknown",
+                    usage_type=usage.meter_name or "Unknown",
+                    usage_amount=float(usage.quantity) if usage.quantity else 0.0,
+                    usage_unit=usage.unit_of_measure or "Unknown",
+                    cost=float(usage.cost) if usage.cost else 0.0,
+                    currency=usage.billing_currency or "USD",
+                    start_time=usage.date,
+                    end_time=usage.date,
+                    tags=usage.tags or {},
+                    environment=self.extract_environment_from_tags(
+                        usage.tags or {}, self.config.azure.environment_tag
+                    ),
+                    cost_center=self.extract_cost_center_from_tags(
+                        usage.tags or {}, self.config.azure.cost_center_tag
+                    )
+                )
+                usage_data.append(billing_entry)
             
             return usage_data
             
@@ -173,9 +207,47 @@ class AzureCollector(BaseCollector):
                                  end_date: datetime) -> List[Dict[str, Any]]:
         """Get cost management data for analysis."""
         try:
-            # This would use Azure Cost Management API
-            # For now, return empty list as placeholder
-            return []
+            from azure.mgmt.costmanagement import CostManagementClient
+            from azure.mgmt.costmanagement.models import QueryDefinition, QueryTimePeriod, TimeframeType
+            
+            cost_mgmt_client = CostManagementClient(
+                self.credential,
+                self.credentials["subscription_id"]
+            )
+            
+            # Define query for cost data
+            query = QueryDefinition(
+                type="Usage",
+                timeframe=TimeframeType.CUSTOM,
+                time_period=QueryTimePeriod(
+                    from_property=start_date,
+                    to=end_date
+                ),
+                dataset={
+                    "granularity": "Daily",
+                    "aggregation": {
+                        "totalCost": {"name": "Cost", "function": "Sum"}
+                    },
+                    "grouping": [
+                        {"type": "Dimension", "name": "ServiceName"},
+                        {"type": "Dimension", "name": "ResourceLocation"}
+                    ]
+                }
+            )
+            
+            scope = f"/subscriptions/{self.credentials['subscription_id']}"
+            result = cost_mgmt_client.query.usage(scope, query)
+            
+            cost_data = []
+            if result.rows:
+                for row in result.rows:
+                    cost_data.append({
+                        'amount': row[0] if len(row) > 0 else 0,
+                        'service_name': row[1] if len(row) > 1 else 'Unknown',
+                        'resource_location': row[2] if len(row) > 2 else 'Unknown'
+                    })
+            
+            return cost_data
             
         except Exception as e:
             raise CollectorError(f"Failed to get cost management data: {e}")

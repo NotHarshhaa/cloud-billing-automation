@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional
 from google.cloud import billing_v1
 from google.cloud import compute_v1
 from google.cloud import storage
+from google.cloud import resourcemanager_v3
 from google.oauth2 import service_account
 from .base import BaseCollector, BillingData, ResourceData
 from ..core.exceptions import CollectorError, APIError
@@ -36,7 +37,7 @@ class GCPCollector(BaseCollector):
             
             # Initialize clients
             self.billing_client = billing_v1.CloudBillingClient(credentials=self.credentials)
-            self.resource_client = resource_manager_v3.ProjectsClient(credentials=self.credentials)
+            self.resource_client = resourcemanager_v3.ProjectsClient(credentials=self.credentials)
             self.compute_client = compute_v1.InstancesClient(credentials=self.credentials)
             self.storage_client = storage.Client(credentials=self.credentials)
             
@@ -47,28 +48,76 @@ class GCPCollector(BaseCollector):
             raise APIError(f"GCP authentication failed: {e}")
     
     def collect_billing_data(self, start_date: datetime, end_date: datetime) -> List[BillingData]:
-        """Collect GCP billing data using Cloud Billing API."""
+        """Collect GCP billing data using BigQuery export."""
         self.validate_date_range(start_date, end_date)
         
         try:
+            from google.cloud import bigquery
+            
             billing_data = []
             
-            # Get billing account
-            billing_account = self._get_billing_account()
+            # Initialize BigQuery client
+            bq_client = bigquery.Client(credentials=self.credentials, project=self.config.gcp.project_id)
             
-            # Query billing data
-            query = billing_v1.QueryBillingAccountRequest(
-                name=billing_account,
-                start_time=start_date.isoformat() + 'Z',
-                end_time=end_date.isoformat() + 'Z'
-            )
+            # Query billing data from BigQuery export table
+            # Note: This assumes billing export is configured to BigQuery
+            query = f"""
+            SELECT
+                service.description as service,
+                location.region as region,
+                resource.name as resource_id,
+                sku.description as usage_type,
+                usage.amount as usage_amount,
+                usage.unit as usage_unit,
+                cost as cost,
+                currency as currency,
+                usage_start_time as start_time,
+                usage_end_time as end_time,
+                labels as tags,
+                project.id as project_id
+            FROM
+                `{self.config.gcp.project_id}.billing_export.gcp_billing_export_v1_*`
+            WHERE
+                DATE(usage_start_time) >= DATE('{start_date.strftime('%Y-%m-%d')}')
+                AND DATE(usage_end_time) <= DATE('{end_date.strftime('%Y-%m-%d')}')
+                AND project.id = '{self.config.gcp.project_id}'
+            ORDER BY
+                usage_start_time DESC
+            """
             
-            # This is a simplified implementation
-            # In practice, you'd use BigQuery export or Cloud Billing API
-            # to get detailed billing data
+            query_job = bq_client.query(query)
+            results = query_job.result()
             
-            # For now, create placeholder implementation
-            # that would be replaced with actual API calls
+            for row in results:
+                # Parse tags/labels
+                tags = {}
+                if row.tags:
+                    for label in row.tags:
+                        tags[label.key] = label.value
+                
+                billing_entry = BillingData(
+                    provider="gcp",
+                    account_id=self.config.gcp.project_id,
+                    service=row.service or "Unknown",
+                    region=row.region or "Unknown",
+                    resource_id=row.resource_id or "Unknown",
+                    resource_name=row.resource_id or "Unknown",
+                    usage_type=row.usage_type or "Unknown",
+                    usage_amount=float(row.usage_amount) if row.usage_amount else 0.0,
+                    usage_unit=row.usage_unit or "Unknown",
+                    cost=float(row.cost) if row.cost else 0.0,
+                    currency=row.currency or "USD",
+                    start_time=row.start_time,
+                    end_time=row.end_time,
+                    tags=tags,
+                    environment=self.extract_environment_from_tags(
+                        tags, self.config.gcp.environment_tag
+                    ),
+                    cost_center=self.extract_cost_center_from_tags(
+                        tags, self.config.gcp.cost_center_tag
+                    )
+                )
+                billing_data.append(billing_entry)
             
             return billing_data
             
@@ -100,9 +149,43 @@ class GCPCollector(BaseCollector):
         self.validate_date_range(start_date, end_date)
         
         try:
-            # This would use Cloud Billing API or BigQuery export
-            # For now, return empty dict as placeholder
-            return {}
+            from google.cloud import bigquery
+            
+            bq_client = bigquery.Client(credentials=self.credentials, project=self.config.gcp.project_id)
+            
+            # Map group_by to BigQuery column
+            group_column_map = {
+                "service": "service.description",
+                "region": "location.region",
+                "project": "project.id"
+            }
+            
+            group_column = group_column_map.get(group_by, "service.description")
+            
+            query = f"""
+            SELECT
+                {group_column} as group_key,
+                SUM(cost) as total_cost
+            FROM
+                `{self.config.gcp.project_id}.billing_export.gcp_billing_export_v1_*`
+            WHERE
+                DATE(usage_start_time) >= DATE('{start_date.strftime('%Y-%m-%d')}')
+                AND DATE(usage_end_time) <= DATE('{end_date.strftime('%Y-%m-%d')}')
+                AND project.id = '{self.config.gcp.project_id}'
+            GROUP BY
+                group_key
+            ORDER BY
+                total_cost DESC
+            """
+            
+            query_job = bq_client.query(query)
+            results = query_job.result()
+            
+            cost_breakdown = {}
+            for row in results:
+                cost_breakdown[row.group_key or 'Unknown'] = float(row.total_cost) if row.total_cost else 0.0
+            
+            return cost_breakdown
             
         except Exception as e:
             raise CollectorError(f"Failed to get GCP cost breakdown: {e}")
@@ -209,8 +292,41 @@ class GCPCollector(BaseCollector):
         resources = []
         
         try:
-            # This would use Cloud SQL Admin API
-            # For now, create placeholder implementation
+            from google.cloud import sql_v1
+            
+            sql_client = sql_v1.SqlInstancesServiceClient(credentials=self.credentials)
+            
+            request = sql_v1.SqlInstancesListRequest(
+                project=self.config.gcp.project_id
+            )
+            
+            instances = sql_client.list(request=request)
+            
+            for instance in instances:
+                # Get instance labels
+                labels = self.standardize_tags(dict(instance.settings.user_labels or {}))
+                
+                resource = ResourceData(
+                    provider="gcp",
+                    account_id=self.config.gcp.project_id,
+                    resource_id=instance.name,
+                    resource_name=instance.name,
+                    resource_type="Cloud SQL Instance",
+                    region=instance.region or "Unknown",
+                    state=instance.state.name if instance.state else "Unknown",
+                    creation_time=datetime.fromisoformat(instance.create_time.rstrip('Z')) if instance.create_time else datetime.now(),
+                    tags=labels,
+                    environment=self.extract_environment_from_tags(
+                        labels, self.config.gcp.environment_tag
+                    ),
+                    cost_center=self.extract_cost_center_from_tags(
+                        labels, self.config.gcp.cost_center_tag
+                    ),
+                    is_idle=self._is_sql_instance_idle(instance),
+                    last_used_time=self._get_sql_instance_last_used(instance)
+                )
+                
+                resources.append(resource)
             
             return resources
             
