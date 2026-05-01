@@ -36,3 +36,4 @@ typer>=0.7.0
 
 # Monitoring and logging
 structlog>=22.3.0
+schedule>=1.2.0

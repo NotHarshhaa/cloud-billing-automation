@@ -119,7 +119,7 @@ def version() -> None:
     try:
         from .. import __version__, __author__
     except ImportError:
-        __version__ = "0.5.4"
+        __version__ = "0.6.0"
         __author__ = "H A R S H H A A"
     
     table = Table(show_header=False, box=None)
@@ -325,7 +325,7 @@ def doctor() -> None:
     # Check credentials
     cred_status = "[yellow]Not configured[/yellow]"
     try:
-        from core.credentials import CredentialManager
+        from ..core.credentials import CredentialManager
         cred_mgr = CredentialManager()
         if cred_mgr.list_credentials():
             cred_status = "[green]Configured[/green]"

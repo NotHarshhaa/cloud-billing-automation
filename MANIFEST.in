@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include cba/templates *.jinja2
+recursive-include cba/config *.yaml
+include cba/cba.bat
+global-exclude __pycache__
+global-exclude *.py[co]

@@ -30,8 +30,9 @@ class CredentialManager:
                 self._encryption_key = Fernet.generate_key()
                 with open(key_path, 'wb') as f:
                     f.write(self._encryption_key)
-                # Set restrictive permissions
-                os.chmod(key_path, 0o600)
+                # Set restrictive permissions (Unix only, Windows uses ACLs)
+                if os.name != 'nt':  # Not Windows
+                    os.chmod(key_path, 0o600)
         
         return self._encryption_key
     
@@ -197,5 +198,6 @@ class CredentialManager:
             for cred_type in credential_types:
                 try:
                     self.delete_credential(provider, cred_type)
-                except:
-                    pass  # Ignore if credential doesn't exist
+                except keyring.errors.PasswordDeleteError:
+                    # Ignore if credential doesn't exist
+                    pass

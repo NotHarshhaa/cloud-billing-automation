@@ -6,7 +6,7 @@ Cloud Engineers and DevOps Engineers to gain visibility, control, and
 automation over cloud billing.
 """
 
-__version__ = "0.5.4"
+__version__ = "0.6.0"
 __author__ = "H A R S H H A A"
 __email__ = "contact@example.com"
 

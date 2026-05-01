@@ -27,7 +27,7 @@ class SecurityPolicy:
     max_login_attempts: int = 5
     lockout_duration_minutes: int = 15
     require_mfa: bool = False
-    allowed_ip_ranges: List[str] = None
+    allowed_ip_ranges: List[str] = field(default_factory=list)
     audit_log_retention_days: int = 90
 
 
@@ -97,7 +97,7 @@ class SecurityUtils:
         try:
             kdf.verify(password.encode(), bytes.fromhex(stored_hash))
             return True
-        except Exception:
+        except (ValueError, TypeError):
             return False
     
     def validate_password_strength(self, password: str) -> tuple[bool, List[str]]:
@@ -433,7 +433,7 @@ class SecurityUtils:
     
     def _generate_encryption_key(self) -> bytes:
         """Generate encryption key for JWT tokens."""
-        return Fernet.generate_key().decode()
+        return Fernet.generate_key()
     
     def get_active_sessions(self) -> List[UserSession]:
         """Get all active sessions."""

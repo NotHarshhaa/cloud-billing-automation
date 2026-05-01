@@ -5,6 +5,7 @@ Alert notification channels (email, webhook, Slack).
 import smtplib
 import requests
 import json
+import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -37,6 +38,15 @@ class BaseChannel(ABC):
     def is_enabled(self) -> bool:
         """Check if channel is enabled."""
         return self.enabled
+    
+    @staticmethod
+    def _validate_url(url: str) -> bool:
+        """Validate URL format and scheme."""
+        if not url:
+            return False
+        # Basic URL validation with HTTPS requirement
+        pattern = r'^https?://(?:[-\w.])+(?:\:[0-9]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?$'
+        return re.match(pattern, url) is not None
 
 
 class EmailChannel(BaseChannel):
@@ -187,10 +197,14 @@ class WebhookChannel(BaseChannel):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.url = config.get('url')
+        # Validate URL
+        if self.url and not self._validate_url(self.url):
+            raise AlertError(f"Invalid webhook URL: {self.url}")
         self.method = config.get('method', 'POST').upper()
         self.headers = config.get('headers', {})
         self.timeout = config.get('timeout', 30)
         self.retry_count = config.get('retry_count', 3)
+        self.verify_ssl = config.get('verify_ssl', True)  # SSL verification enabled by default
     
     def send(self, alert: Alert, template_data: Optional[Dict[str, Any]] = None) -> bool:
         """Send alert via webhook."""
@@ -205,7 +219,7 @@ class WebhookChannel(BaseChannel):
                 'timestamp': datetime.now().isoformat()
             }
             
-            # Send webhook
+            # Send webhook with SSL verification
             for attempt in range(self.retry_count):
                 try:
                     response = requests.request(
@@ -213,7 +227,8 @@ class WebhookChannel(BaseChannel):
                         url=self.url,
                         json=payload,
                         headers=self.headers,
-                        timeout=self.timeout
+                        timeout=self.timeout,
+                        verify=self.verify_ssl
                     )
                     
                     if response.status_code < 400:
@@ -242,7 +257,8 @@ class WebhookChannel(BaseChannel):
                 url=self.url,
                 json=test_payload,
                 headers=self.headers,
-                timeout=self.timeout
+                timeout=self.timeout,
+                verify=self.verify_ssl
             )
             
             return response.status_code < 400
@@ -257,10 +273,16 @@ class SlackChannel(BaseChannel):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.webhook_url = config.get('webhook_url')
+        # Validate Slack webhook URL
+        if self.webhook_url and not self._validate_url(self.webhook_url):
+            raise AlertError(f"Invalid Slack webhook URL: {self.webhook_url}")
+        if self.webhook_url and not self.webhook_url.startswith('https://hooks.slack.com/'):
+            raise AlertError(f"Slack webhook URL must start with https://hooks.slack.com/: {self.webhook_url}")
         self.channel = config.get('channel')
         self.username = config.get('username', 'CloudBillingBot')
         self.icon_emoji = config.get('icon_emoji', ':robot_face:')
         self.timeout = config.get('timeout', 30)
+        self.verify_ssl = config.get('verify_ssl', True)  # SSL verification enabled by default
     
     def send(self, alert: Alert, template_data: Optional[Dict[str, Any]] = None) -> bool:
         """Send alert via Slack."""
@@ -271,11 +293,12 @@ class SlackChannel(BaseChannel):
             # Create Slack message
             message = self._create_slack_message(alert, template_data)
             
-            # Send to Slack
+            # Send to Slack with SSL verification
             response = requests.post(
                 self.webhook_url,
                 json=message,
-                timeout=self.timeout
+                timeout=self.timeout,
+                verify=self.verify_ssl
             )
             
             return response.status_code == 200
@@ -298,7 +321,8 @@ class SlackChannel(BaseChannel):
             response = requests.post(
                 self.webhook_url,
                 json=test_message,
-                timeout=self.timeout
+                timeout=self.timeout,
+                verify=self.verify_ssl
             )
             
             return response.status_code == 200
